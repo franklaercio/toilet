@@ -1,3 +1,6 @@
+import java.time.Instant;
+import java.util.Random;
+
 /**
  * Producer tries to use the toilet
  *
@@ -6,6 +9,11 @@
  */
 public class Producer extends Thread {
 
+  /**
+   * Function to random a value in Java.
+   */
+  private static final Random random = new Random();
+  
   /**
    * Shared toilet in the company.
    */
@@ -27,6 +35,6 @@ public class Producer extends Thread {
    */
   @Override
   public void run() {
-    buffer.use(Gender.random());
+    buffer.use(new Person(Gender.random(), Instant.now().plusSeconds(random.nextInt(10))));
   }
 }

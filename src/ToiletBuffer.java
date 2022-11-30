@@ -1,3 +1,4 @@
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -17,8 +18,7 @@ public class ToiletBuffer {
   /**
    * Shared toilet
    */
-  private final Queue<Gender> buffer;
-
+  private final Queue<Person> buffer;
 
   /**
    * ToiletBuffer constructor
@@ -34,12 +34,15 @@ public class ToiletBuffer {
    * Method to use the toilet. If the capacity is completely engaged, it is not possible to use the
    * toilet. If you have someone of another gender, you cannot use the toilet.
    *
-   * @param gender Gender to use the toilet
+   * @param person Gender to use the toilet
    */
-  public synchronized void use(Gender gender) {
-    while (buffer.size() == capacity || (!buffer.isEmpty() && !buffer.contains(gender))) {
+  public synchronized void use(Person person) {
+    while (buffer.size() == capacity || (
+        !buffer.isEmpty() && buffer.stream().noneMatch(p -> p.getGender() == person.getGender()))) {
       System.out.print("Toilet engaged. ");
-      System.out.println(Thread.currentThread().getName() + " " + gender + " is waiting.");
+      System.out.print("There is " + buffer.size() + " in toilet. ");
+      System.out.println(
+          Thread.currentThread().getName() + " " + person.getGender() + " is waiting.");
       try {
         wait();
       } catch (InterruptedException e) {
@@ -47,8 +50,8 @@ public class ToiletBuffer {
       }
     }
 
-    buffer.add(gender);
-    System.out.println(Thread.currentThread().getName() + " " + gender + " in toilet.");
+    buffer.add(person);
+    System.out.println(Thread.currentThread().getName() + " " + person.getGender() + " in toilet.");
     notifyAll();
   }
 
@@ -66,8 +69,14 @@ public class ToiletBuffer {
       }
     }
 
-    Gender gender = buffer.remove();
-    System.out.println(Thread.currentThread().getName() + " removed " + gender);
-    notifyAll();
+    while (true) {
+      Person person = buffer.peek();
+      if (person != null && person.getToiletTime().isBefore(Instant.now())) {
+        buffer.remove(person);
+        System.out.println(Thread.currentThread().getName() + " removed " + person.getGender());
+        notifyAll();
+        break;
+      }
+    }
   }
 }
